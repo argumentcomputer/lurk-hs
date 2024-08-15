@@ -1,0 +1,16 @@
+[package]
+name = "babybear"
+version = "1.0.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/argumentcomputer/sphinx-hs"
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+# From https://github.com/argumentcomputer/sphinx/blob/dev/Cargo.toml
+p3-field = { git = "https://github.com/argumentcomputer/Plonky3.git", branch = "sp1-new" }
+p3-baby-bear = { git = "https://github.com/argumentcomputer/Plonky3.git", branch = "sp1-new", features = [
+  "nightly-features",
+]}

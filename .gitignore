@@ -1,0 +1,15 @@
+# Cargo build
+**/target
+
+# MacOS nuisances
+.DS_Store
+
+# Environment
+.env
+
+# Build files
+*.a
+*.hi
+*.o
+libsphinxgnark.h
+Main
