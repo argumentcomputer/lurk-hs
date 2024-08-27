@@ -1,0 +1,20 @@
+[package]
+name = "plonk-verify"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+hs-bindgen = { version = "0.8.0", features = ["full"] }
+sphinx-core = { git = "https://github.com/argumentcomputer/sphinx.git", branch = "dev"}
+sphinx-recursion-core = { git = "https://github.com/argumentcomputer/sphinx.git", branch = "dev"}
+sphinx-recursion-gnark-ffi = { git = "https://github.com/argumentcomputer/sphinx.git", branch = "dev"}
+sphinx-recursion-program = { git = "https://github.com/argumentcomputer/sphinx.git", branch = "dev"}
+getrandom = "=0.2.14"
+async-trait = "0.1.81"
+p3-field = { git = "https://github.com/argumentcomputer/Plonky3.git", branch = "sp1-new" }
+p3-baby-bear = { git = "https://github.com/argumentcomputer/Plonky3.git", branch = "sp1-new", features = [
+  "nightly-features",
+]}
+
+[lib]
+crate-type = ["cdylib"]
