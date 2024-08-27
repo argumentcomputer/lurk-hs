@@ -17,4 +17,4 @@ p3-baby-bear = { git = "https://github.com/argumentcomputer/Plonky3.git", branch
 ]}
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "staticlib"]
