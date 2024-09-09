@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      xserver:
+        image: tianon/xserver
+        options: --privileged
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 1: Set up Rust and build with Cargo
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build with Cargo
+        run: cargo build
+
+      # Step 2: Set up Haskell and build with Cabal
+      - name: Set up Haskell
+        uses: haskell/actions/setup@v1
+        with:
+          ghc-version: '9.2.5'  
+          cabal-version: '3.6.2.0'
+
+      - name: Build with Cabal
+        run: cabal build
+
+      # Step 3: Test with GHCi in Cabal Repl
+      - name: Run GHCi tests
+        run: |
+          echo "Starting GHCi..."
+          echo ':set -Ltarget/debug -lplonk_verify' > commands.ghci
+          echo 'withCString "Rust" hello' >> commands.ghci
+          echo 'babybearinv 1' >> commands.ghci
+          echo 'babybearinv 2' >> commands.ghci
+          echo ':quit' >> commands.ghci
+
+          # Run cabal repl and pipe commands to GHCi
+          cabal repl < commands.ghci
