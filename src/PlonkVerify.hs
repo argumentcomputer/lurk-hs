@@ -24,6 +24,6 @@ import Foreign.C.String
 import Foreign.C.Types
 import Foreign.Ptr
 
-foreign import ccall safe "__c_babybearextinv" babybearextinv :: CUInt -> CUInt -> CUInt -> CUInt -> CUInt -> IO (CUInt)
+foreign import ccall safe "__c_babybearextinv" babybearextinv :: CUInt -> CString -> CUInt -> CString -> CUInt -> IO (CUInt)
 foreign import ccall safe "__c_babybearinv" babybearinv :: CUInt -> IO (CUInt)
 foreign import ccall safe "__c_hello" hello :: CString -> IO (())
