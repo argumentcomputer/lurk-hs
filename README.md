@@ -29,7 +29,7 @@ Ensure that you have Haskell and Cabal installed by following the instructions [
 ## Build steps
 - Build the Rust part of the project:
 ```bash
-cargo build
+cargo build --release
 ```
 - Build the Haskell part of the project:
 ```bash

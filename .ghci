@@ -1,1 +1,1 @@
-:set -Ltarget/debug -lplonk_verify
+:set -Ltarget/release -lplonk_verify

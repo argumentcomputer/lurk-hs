@@ -71,5 +71,8 @@ jobs:
         run: cargo nextest run --release --no-fail-fast
 
       # Run the Haskell test
-      - name: Run the cabal test
+      - name: Run the cabal test program
         run: LD_LIBRARY_PATH=$(pwd)/target/release cabal run test
+
+      - name: Run the Haskell test suite
+        run: LD_LIBRARY_PATH=$(pwd)/target/release cabal test
