@@ -1,4 +1,6 @@
 use hs_bindgen::*;
+use sha2::{Digest as _, Sha256};
+use hex;
 
 use sphinx_recursion_gnark_ffi::ffi;
 
@@ -10,12 +12,33 @@ pub fn verify_plonk_bn254(
     vkey_hash_str: &str,
     committed_values_digest_str: &str,
 ) -> u32 {
+    // Decode the hex-encoded string
+    let decoded_bytes = hex::decode(committed_values_digest_str).expect("Invalid committed values field");
+
+    // Check the bit length (bytes * 8 should be 254 bits)
+    let bit_length = decoded_bytes.len() * 8;
+
+    let public_inputs: String = if bit_length > 254 {
+        // The user has provided the committed values rather than the digest!
+        // Let's reproduce the digest using the committed values
+        //
+        // Hash the value using SHA-256
+        let mut hash: [u8;32]  = Sha256::digest(decoded_bytes).into();
+        // Truncate to 253 bits by clearing the top 3 bits of the first byte
+        hash[0] &= 0x1F; // 0x1F is 00011111 in binary, which clears the top 3 bits
+
+        // Re-encode the truncated hash in hex
+        hex::encode(hash)
+    } else {
+        committed_values_digest_str.to_string()
+    };
+
     // TODO: sanity-check the inputs by parsing the build_dir_str, vkey_hash_str, and committed_values_digest_str
     let res = ffi::verify_plonk_bn254(
         build_dir_str,
         proof_str,
         vkey_hash_str,
-        committed_values_digest_str,
+        &public_inputs,
     );
 
     // Call the actual function in sphinx_recursion_gnark_ffi

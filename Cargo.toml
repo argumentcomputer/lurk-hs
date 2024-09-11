@@ -17,6 +17,8 @@ p3-baby-bear = { git = "https://github.com/argumentcomputer/Plonky3.git", branch
 ]}
 num-bigint = { version = "0.4.6", default-features = false }
 serde = "1.0.207"
+sha2 = "0.10.8"
+hex = "0.4.3"
 
 [lib]
 crate-type = ["staticlib"]
@@ -25,4 +27,3 @@ crate-type = ["staticlib"]
 hex = "0.4.3"
 home = "0.5.9"
 serde_json = "1.0.128"
-sha2 = "0.10.8"
