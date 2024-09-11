@@ -108,4 +108,5 @@ test-suite tests
         , plonk-verify
         , aeson >=2.2
         , base
+        , hspec >=2.11
 

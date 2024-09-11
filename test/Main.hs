@@ -11,43 +11,46 @@ module Main
 ( main
 ) where
 
-import Control.Monad
-
 import Data.Aeson
 
 import Foreign.C.String
 
+import Test.Hspec
+
 -- internal modules
+
 import PlonkVerify
 
 -- -------------------------------------------------------------------------- --
 -- main
 
 main :: IO ()
-main = do
-    example "fibonacci_fixture"
-    example "epoch_change"
-    example "inclusion_fixture"
+main = hspec $ describe "examples" $ do
+    testExample "fibonacci_fixture"
+    testExample "epoch_change"
+    testExample "inclusion_fixture"
 
 -- --------------------------------------------------------------------------
 -- Run Example
 
-example :: String -> IO ()
-example name = do
+testExample :: String -> SpecWith ()
+testExample name = it name $ do
+    r <- runExample name
+    shouldNotBe r 0
+
+runExample :: String -> IO Int
+runExample name = do
     p <- readProof name
     dataDir <- newCString "./assets"
     proof <- newCString (_proofProof p)
     vkeyHash <- newCString (_proofVKey p)
     committedValuesDigest <- newCString (_proofPublicValues p)
 
-    rawRes <- verify_plonk_bn254
+    fromIntegral <$> verify_plonk_bn254
         dataDir
         proof
         vkeyHash
         committedValuesDigest
-
-    when (rawRes == 0) $ error "Verification failed"
-    return ()
 
 -- -------------------------------------------------------------------------- --
 -- Utils
