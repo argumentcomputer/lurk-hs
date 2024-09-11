@@ -2,19 +2,27 @@
 name = "plonk-verify"
 version = "0.1.0"
 edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/argumentcomputer/lurk-hs"
 
 [dependencies]
-hs-bindgen = { version = "0.8.0", features = ["full"] }
-sphinx-core = { git = "https://github.com/argumentcomputer/sphinx.git", branch = "dev"}
-sphinx-recursion-core = { git = "https://github.com/argumentcomputer/sphinx.git", branch = "dev"}
-sphinx-recursion-gnark-ffi = { git = "https://github.com/argumentcomputer/sphinx.git", branch = "dev"}
-sphinx-recursion-program = { git = "https://github.com/argumentcomputer/sphinx.git", branch = "dev"}
+hs-bindgen = { version = "0.9.0", features = ["full"] }
+# sphinx-recursion-gnark-ffi = { path = "../sphinx/recursion/gnark-ffi", features = ["native"]}
+sphinx-recursion-gnark-ffi = { git = "https://github.com/argumentcomputer/sphinx.git", branch = "dev", features = ["native"]}
 getrandom = "=0.2.14"
 async-trait = "0.1.81"
 p3-field = { git = "https://github.com/argumentcomputer/Plonky3.git", branch = "sp1-new" }
 p3-baby-bear = { git = "https://github.com/argumentcomputer/Plonky3.git", branch = "sp1-new", features = [
   "nightly-features",
 ]}
+num-bigint = { version = "0.4.6", default-features = false }
+serde = "1.0.207"
 
 [lib]
-crate-type = ["cdylib", "staticlib"]
+crate-type = ["staticlib"]
+
+[dev-dependencies]
+hex = "0.4.3"
+home = "0.5.9"
+serde_json = "1.0.128"
+sha2 = "0.10.8"

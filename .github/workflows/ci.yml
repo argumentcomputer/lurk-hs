@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Step 1: Set up Rust and build with Cargo
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build with Cargo
+        run: cargo build --release
+
+      # Step 2: Set up Haskell and build with Cabal
+      - name: Set up Haskell
+        uses: haskell/actions/setup@v1
+        with:
+          ghc-version: '9.2.5'  
+          cabal-version: '3.6.2.0'
+
+      - name: Build with Cabal
+        run: cabal build
+
+      # Download and untar the required file
+      - name: Download and untar PLONK params
+        run: |
+          mkdir -p ~/.sp1/circuits/plonk_bn254/v1.0.8-testnet
+          wget https://sphinx-plonk-params.s3.amazonaws.com/v1.0.8-testnet.tar.gz -O plonk_params.tar.gz
+          tar -xzf plonk_params.tar.gz -C ~/.sp1/circuits/plonk_bn254/v1.0.8-testnet
+          rm plonk_params.tar.gz
+
+      # Install and run nextest
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Run tests with nextest
+        run: cargo nextest run --release --no-fail-fast

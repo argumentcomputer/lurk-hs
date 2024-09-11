@@ -16,7 +16,7 @@
 
 {-# OPTIONS_GHC -Wno-unused-imports #-}
 
-module PlonkVerify (babybearextinv, babybearinv, hello) where
+module PlonkVerify (verify_plonk_bn254) where
 
 import Data.Int
 import Data.Word
@@ -24,6 +24,4 @@ import Foreign.C.String
 import Foreign.C.Types
 import Foreign.Ptr
 
-foreign import ccall safe "__c_babybearextinv" babybearextinv :: CUInt -> CUInt -> CUInt -> CUInt -> CUInt -> IO (CUInt)
-foreign import ccall safe "__c_babybearinv" babybearinv :: CUInt -> IO (CUInt)
-foreign import ccall safe "__c_hello" hello :: CString -> IO (())
+foreign import ccall safe "__c_verify_plonk_bn254" verify_plonk_bn254 :: CString -> CString -> CString -> CString -> IO (CUInt)
