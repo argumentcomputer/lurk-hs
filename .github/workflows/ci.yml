@@ -50,3 +50,7 @@ jobs:
 
       - name: Run tests with nextest
         run: cargo nextest run --release --no-fail-fast
+
+      # Run the Haskell test
+      - name: Run the cabal test
+        run: cabal run test
