@@ -75,11 +75,8 @@ mod tests {
 
     // this assumes that the artifacts are installed in ~/.sp1/circuits/plonk_bn254/dev
     pub fn plonk_bn254_artifacts_dev_dir() -> PathBuf {
-        home::home_dir()
-            .unwrap()
-            .join(".sp1")
-            .join("circuits")
-            .join("plonk_bn254")
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("verifier-assets")
             .join("v1.0.8-testnet")
     }
 

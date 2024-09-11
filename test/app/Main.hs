@@ -1,17 +1,13 @@
 module Main where
 
-import System.Environment (getEnv)
-import System.FilePath ((</>))  -- for cross-platform file path composition
 import Foreign.C.String
 import PlonkVerify
 
 main :: IO ()
 main = do
-    -- Get the user's home directory
-    homeDir <- getEnv "HOME"
-    
-    -- Construct the full path by replacing `~` with the home directory
-    let circuitPathStr = homeDir </> ".sp1/circuits/plonk_bn254/v1.0.8-testnet"
+    -- This directory contains only the necessary artifacts for verification
+    -- Alternatively, the parameters might also be present at `~/.sp1/circuits/plonk_bn254/v1.0.8-testnet`
+    let circuitPathStr = "./verifier-assets/v1.0.8-testnet"
     
     -- Convert Haskell strings to CStrings
     circuitPath <- newCString circuitPathStr

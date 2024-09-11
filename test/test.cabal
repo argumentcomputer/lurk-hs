@@ -51,7 +51,7 @@ executable test
     -- Import common warning flags.
     import:           warnings
 
-    build-depends:    base, filepath, plonk-verify
+    build-depends:    base, plonk-verify
 
     -- .hs or .lhs file containing the Main module.
     main-is:          Main.hs
