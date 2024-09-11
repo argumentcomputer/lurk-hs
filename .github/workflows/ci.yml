@@ -12,11 +12,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      xserver:
-        image: tianon/xserver
-        options: --privileged
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -41,15 +36,6 @@ jobs:
       - name: Build with Cabal
         run: cabal build
 
-      # Step 3: Test with GHCi in Cabal Repl
-      - name: Run GHCi tests
-        run: |
-          echo "Starting GHCi..."
-          echo ':set -Ltarget/debug -lplonk_verify' > commands.ghci
-          echo 'withCString "Rust" hello' >> commands.ghci
-          echo 'babybearinv 1' >> commands.ghci
-          echo 'babybearinv 2' >> commands.ghci
-          echo ':quit' >> commands.ghci
-
-          # Run cabal repl and pipe commands to GHCi
-          cabal repl < commands.ghci
+      # Step 3: Run Cargo tests
+      - name: Run Cargo tests
+        run: cargo test
