@@ -36,8 +36,15 @@ jobs:
       - name: Build with Cabal
         run: cabal build
 
-      # Download and untar the required file
-      - name: Download and untar PLONK params
+      # Cache PLONK params download
+      - name: Cache PLONK params
+        uses: actions/cache@v3
+        with:
+          path: ~/.sp1/circuits/plonk_bn254/v1.0.8-testnet
+          key: plonk-params-v1.0.8-testnet
+
+      - name: Download and untar PLONK params (if not cached)
+        if: steps.cache-plonk-params.outputs.cache-hit != 'true'
         run: |
           mkdir -p ~/.sp1/circuits/plonk_bn254/v1.0.8-testnet
           wget https://sphinx-plonk-params.s3.amazonaws.com/v1.0.8-testnet.tar.gz -O plonk_params.tar.gz
