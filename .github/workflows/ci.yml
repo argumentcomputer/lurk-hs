@@ -72,4 +72,4 @@ jobs:
 
       # Run the Haskell test
       - name: Run the cabal test
-        run: cabal run test
+        run: LD_LIBRARY_PATH=$(pwd)/target/release cabal run test

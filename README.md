@@ -42,3 +42,13 @@ To run tests for the Rust components, execute:
 ```bash
 cargo test
 ```
+
+To run the example Haskell application, execute:
+```bash
+cabal run test
+```
+
+If that fails with "error while loading shared libraries", try instead: (for using `target/release/libplonk_verify.so`)
+```bash
+LD_LIBRARY_PATH=$(pwd)/target/release cabal run test
+```
