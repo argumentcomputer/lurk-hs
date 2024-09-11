@@ -1,6 +1,14 @@
 use hs_bindgen::*;
+use num_bigint::BigUint;
+use sha2::{Digest as _, Sha256};
+use hex;
 
 use sphinx_recursion_gnark_ffi::ffi;
+
+// Helper function to remove "0x" if present
+fn strip_hex_prefix(hex: &str) -> &str {
+    hex.strip_prefix("0x").unwrap_or(hex)
+}
 
 // Facade exposing a bindgen anchor
 #[hs_bindgen]
@@ -10,12 +18,40 @@ pub fn verify_plonk_bn254(
     vkey_hash_str: &str,
     committed_values_digest_str: &str,
 ) -> u32 {
-    // TODO: sanity-check the inputs by parsing the build_dir_str, vkey_hash_str, and committed_values_digest_str
+    let proof_str = strip_hex_prefix(proof_str);
+    let vkey_hash_str = strip_hex_prefix(vkey_hash_str);
+    let committed_values_digest_str = strip_hex_prefix(committed_values_digest_str);
+
+    // Decode the hex-encoded string for public values
+    let decoded_bytes = hex::decode(committed_values_digest_str).expect("Invalid committed values field");
+
+    // Check the bit length (bytes * 8 should be 256 bits), hash if necessary
+    let bit_length = decoded_bytes.len() * 8;
+
+    let public_inputs: String = if bit_length > 256 {
+        // The user has provided the committed values rather than the digest!
+        // Let's reproduce the digest using the committed values
+        //
+        // Hash the value using SHA-256
+        let mut hash: [u8;32]  = Sha256::digest(decoded_bytes).into();
+        // Truncate to 253 bits by clearing the top 3 bits of the first byte
+        hash[0] &= 0x1F; // 0x1F is 00011111 in binary, which clears the top 3 bits
+
+        // Re-encode the truncated hash in hex
+        hex::encode(hash)
+    } else {
+        committed_values_digest_str.to_string()
+    };
+
+    // Parse the BigNum arguments
+    let vkey_biguint = BigUint::parse_bytes(vkey_hash_str.as_bytes(), 16).expect("Failed to parse vkey");
+    let public_values_biguint = BigUint::parse_bytes(public_inputs.as_bytes(), 16).expect("Failed to parse public values");
+    
     let res = ffi::verify_plonk_bn254(
         build_dir_str,
         proof_str,
-        vkey_hash_str,
-        committed_values_digest_str,
+        &vkey_biguint.to_string(),
+        &public_values_biguint.to_string(),
     );
 
     // Call the actual function in sphinx_recursion_gnark_ffi
@@ -29,10 +65,7 @@ pub fn verify_plonk_bn254(
 
 #[cfg(test)]
 mod tests {
-    use ffi::verify_plonk_bn254;
-    use num_bigint::BigUint;
     use serde::{Deserialize, Serialize};
-    use sha2::{Digest as _, Sha256};
     use std::{
         fs,
         path::{Path, PathBuf},
@@ -58,12 +91,6 @@ mod tests {
         entry.extension().and_then(|ext| ext.to_str()) == Some("json")
     }
 
-    pub fn get_vkey_hash(build_dir: &Path) -> [u8; 32] {
-        let vkey_path = build_dir.join("vk.bin");
-        let vk_bin_bytes = std::fs::read(vkey_path).unwrap();
-        Sha256::digest(vk_bin_bytes).into()
-    }
-
     const MIN_PROOF_LENGTH: usize = 3*64 + 192 + 160 + 64 + 32 + 64 + 64; // 768
 
     #[test]
@@ -87,16 +114,6 @@ mod tests {
                 let fixture: SolidityFixture =
                     serde_json::from_str(&fixture_data).expect("Failed to deserialize fixture");
 
-                // Helper function to remove "0x" if present
-                fn strip_hex_prefix(hex: &str) -> &str {
-                    hex.strip_prefix("0x").unwrap_or(hex)
-                }
-
-                // Parse vkey, public values, and proof after stripping "0x"
-                let vkey = strip_hex_prefix(&fixture.vkey);
-                let public_values = strip_hex_prefix(&fixture.public_values);
-                let proof = strip_hex_prefix(&fixture.proof);
-
                 // Sanity-check the proof length
                 // l_com: 64 bytes,
                 // r_com: 64 bytes,
@@ -110,29 +127,22 @@ mod tests {
                 // opening_at_zeta_omega_proof: 64 bytes,
                 // selector_commit_api_at_zeta: variable,
                 // wire_committed_commitments: variable,
-                assert!(proof.len() >= MIN_PROOF_LENGTH);
-
-                // Parse the BigNum arguments
-                let vkey_biguint = BigUint::parse_bytes(vkey.as_bytes(), 16).expect("Failed to parse vkey");
-                let public_values_biguint = BigUint::parse_bytes(public_values.as_bytes(), 16).expect("Failed to parse public values");
-                
-                eprintln!("vkey: {:?}", vkey_biguint);
-                eprintln!("public_values: {:?}", public_values_biguint);
+                assert!(strip_hex_prefix(&fixture.proof).len() >= MIN_PROOF_LENGTH);
 
                 // Fetch the prover's asset directory
                 let build_dir = plonk_bn254_artifacts_dev_dir();
-                let result = verify_plonk_bn254(
+                let result = super::verify_plonk_bn254(
                     build_dir.to_str().unwrap(),
-                    &proof,
-                    &vkey_biguint.to_string(),
-                    &public_values_biguint.to_string(),
+                    &fixture.proof,
+                    &fixture.vkey,
+                    &fixture.public_values,
                 );
 
                 // Push the result of this verification to the results list
                 match result {
-                    Ok(_) => results.push(Ok(())),
-                    Err(e) => {
-                        results.push(Err(format!("Verification failed for {:?}: {:?}", path, e)))
+                    1 => results.push(Ok(())),
+                    _ => {
+                        results.push(Err(format!("Verification failed for {:?}", path)))
                     }
                 }
 
