@@ -47,7 +47,6 @@ pub fn verify_plonk_bn254(
     let vkey_biguint = BigUint::parse_bytes(vkey_hash_str.as_bytes(), 16).expect("Failed to parse vkey");
     let public_values_biguint = BigUint::parse_bytes(public_inputs.as_bytes(), 16).expect("Failed to parse public values");
     
-    // TODO: sanity-check the inputs by parsing the build_dir_str, vkey_hash_str, and committed_values_digest_str
     let res = ffi::verify_plonk_bn254(
         build_dir_str,
         proof_str,
