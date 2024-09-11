@@ -97,17 +97,6 @@ mod tests {
                 let public_values = strip_hex_prefix(&fixture.public_values);
                 let proof = strip_hex_prefix(&fixture.proof);
 
-                // Sanity-check the vkey
-                let vkey_hash_part = &proof[..8]; // 8 hex chars = 4 bytes
-                let encoded_proof_part = &proof[8..]; // The rest is encoded_proof
-
-                // Convert both parts from hex to bytes
-                let plonk_vkey_hash: Vec<u8> =
-                    hex::decode(vkey_hash_part).expect("Failed to decode vkey hash");
-
-                let vkey_hash = get_vkey_hash(&plonk_bn254_artifacts_dev_dir());
-                assert_eq!(vkey_hash[..4], plonk_vkey_hash, "vkey hash mismatch! this proof was generated with a different version of the Plonk circuit. Proof requires {}, but Plonk circuit is at {}", vkey_hash_part, hex::encode(vkey_hash));
-
                 // Sanity-check the proof length
                 // l_com: 64 bytes,
                 // r_com: 64 bytes,
@@ -126,12 +115,15 @@ mod tests {
                 // Parse the BigNum arguments
                 let vkey_biguint = BigUint::parse_bytes(vkey.as_bytes(), 16).expect("Failed to parse vkey");
                 let public_values_biguint = BigUint::parse_bytes(public_values.as_bytes(), 16).expect("Failed to parse public values");
-                        
+                
+                eprintln!("vkey: {:?}", vkey_biguint);
+                eprintln!("public_values: {:?}", public_values_biguint);
+
                 // Fetch the prover's asset directory
                 let build_dir = plonk_bn254_artifacts_dev_dir();
                 let result = verify_plonk_bn254(
                     build_dir.to_str().unwrap(),
-                    &encoded_proof_part,
+                    &proof,
                     &vkey_biguint.to_string(),
                     &public_values_biguint.to_string(),
                 );
