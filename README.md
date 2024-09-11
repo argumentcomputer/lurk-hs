@@ -31,6 +31,12 @@ Ensure that you have Haskell and Cabal installed by following the instructions [
 ```bash
 cargo build --release
 ```
+
+- (For macOS only) Build the dynamic library:
+```bash
+cargo rustc --release --crate-type cdylib
+```
+
 - Build the Haskell part of the project:
 ```bash
 cabal build

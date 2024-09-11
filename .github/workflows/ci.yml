@@ -36,7 +36,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
 
       - name: Build with Cargo
-        run: cargo build --release
+      - run: |
+            if [[ "${{ matrix.runner }}" == "warp-macos-latest-arm64-6x" ]]; then
+              cargo rustc --release --crate-type cdylib
+            else
+              cargo build --release
+            fi
 
       # Step 2: Set up Haskell and build with Cabal
       - name: Set up Haskell
@@ -57,7 +62,7 @@ jobs:
 
       # Run the Haskell test
       - name: Run the cabal test program
-        run: LD_LIBRARY_PATH=$(pwd)/target/release cabal run test
+        run: cabal run test
 
       - name: Run the Haskell test suite
-        run: LD_LIBRARY_PATH=$(pwd)/target/release cabal test
+        run: cabal test
