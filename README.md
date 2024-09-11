@@ -32,7 +32,7 @@ Ensure that you have Haskell and Cabal installed by following the instructions [
 cargo build --release
 ```
 
-- (For macOS only) Build the dynamic library:
+- (For macOS only/cabal repl only) Build the dynamic library:
 ```bash
 cargo rustc --release --crate-type cdylib
 ```
@@ -54,7 +54,11 @@ To run the example Haskell application, execute:
 cabal run test
 ```
 
-If that fails with "error while loading shared libraries", try instead: (for using `target/release/libplonk_verify.so`)
+## Troubleshooting
+
+If you get "error while loading shared libraries", try:
 ```bash
-LD_LIBRARY_PATH=$(pwd)/target/release cabal run test
+cargo clean
 ```
+
+This happens if the library is built against the `.so` file, and can happen if you ran `cargo rustc --crate-type cdylib` in the past.
