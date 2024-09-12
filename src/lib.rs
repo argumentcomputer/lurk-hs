@@ -1,4 +1,3 @@
-use hex;
 use hs_bindgen::*;
 use num_bigint::BigUint;
 use sha2::{Digest as _, Sha256};
