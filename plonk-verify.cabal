@@ -40,7 +40,7 @@ version:            0.1.0
 -- A copyright notice.
 -- copyright:
 
-extra-source-files: Cargo.toml Cargo.lock src/lib.rs
+extra-source-files: hsbindgen.toml Cargo.toml Cargo.lock src/lib.rs
 
 -- This let us hook Cabal steps to Setup.lhs script.
 build-type:         Custom
