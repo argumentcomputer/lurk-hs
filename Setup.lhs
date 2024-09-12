@@ -18,13 +18,17 @@ should be removed before `cargo-cabal` stable release.
 > import Distribution.Simple.Setup
 >   ( BuildFlags (buildVerbosity),
 >     ConfigFlags (configVerbosity),
+>     InstallFlags,
+>     CleanFlags,
+>     CopyFlags,
 >     fromFlag,
 >   )
 > import Distribution.Simple.UserHooks
->   ( UserHooks (buildHook, confHook),
+>   ( UserHooks (buildHook, confHook, cleanHook, instHook, copyHook),
 >   )
-> import Distribution.Simple.Utils (rawSystemExit)
-> import System.Directory (getCurrentDirectory)
+> import Distribution.Simple.Utils (rawSystemExit, copyFiles)
+> import System.Directory (getCurrentDirectory, doesFileExist)
+> import Distribution.Verbosity (silent, verbose)
 >
 > main :: IO ()
 > main =
@@ -32,6 +36,9 @@ should be removed before `cargo-cabal` stable release.
 >     simpleUserHooks
 >       { confHook = rustConfHook
 >       , buildHook = rustBuildHook
+>       , cleanHook = rustCleanHook
+>       , instHook = rustInstHook
+>       , copyHook = rustCopyHook
 >       }
 
 This hook could be remove if at some point, likely if this issue is resolved
@@ -42,10 +49,12 @@ https://github.com/haskell/cabal/issues/2641
 >   ConfigFlags ->
 >   IO LocalBuildInfo
 > rustConfHook (description, buildInfo) flags = do
+>   rawSystemExit (fromFlag $ configVerbosity flags) "cargo" ["build","--release"]
 >   localBuildInfo <- confHook simpleUserHooks (description, buildInfo) flags
 >   let packageDescription = localPkgDescr localBuildInfo
 >       library = fromJust $ PD.library packageDescription
 >       libraryBuildInfo = PD.libBuildInfo library
+>   putStrLn $ show flags
 >   dir <- getCurrentDirectory
 >   return localBuildInfo
 >     { localPkgDescr = packageDescription
@@ -53,6 +62,7 @@ https://github.com/haskell/cabal/issues/2641
 >         { PD.libBuildInfo = libraryBuildInfo
 >           { PD.extraLibDirs = (dir ++ "/target/release") :
 >                               (dir ++ "/target/debug") :
+>                               (dir ++ "/dist/build") :
 >             PD.extraLibDirs libraryBuildInfo
 >     } } } }
 
@@ -66,6 +76,7 @@ in Cabal https://github.com/haskell/cabal/issues/7906
 >   BuildFlags ->
 >   IO ()
 > rustBuildHook description localBuildInfo hooks flags = do
+>   dir <- getCurrentDirectory
 >   putStrLn "******************************************************************"
 >   putStrLn "Call `cargo build --release` to build a dependency written in Rust"
 >   -- FIXME: add `--target $TARGET` flag to support cross-compiling to $TARGET
@@ -73,9 +84,44 @@ in Cabal https://github.com/haskell/cabal/issues/7906
 >   putStrLn "... `rustc` compilation seems to succeed 🦀! Back to Cabal build:"
 >   putStrLn "******************************************************************"
 >   putStrLn "Back to Cabal build"
+>   putStrLn $ show flags
+>   copyFiles verbose "./dist/build/" [("target/release/", "libplonk_verify.a")]
+>   exists <- doesFileExist $ dir ++ "/target/release/libplonk_verify.a"
 >   buildHook simpleUserHooks description localBuildInfo hooks flags
+
+> rustCleanHook :: PD.PackageDescription -> () -> UserHooks -> CleanFlags -> IO ()
+> rustCleanHook description wtf hooks flags = do
+>   dir <- getCurrentDirectory
+>   putStrLn "clean"
+>   putStrLn dir
+>   exists <- doesFileExist $ dir ++ "/target/release/libplonk_verify.a"
+>   putStrLn $ if exists then "yes" else "no"
+>   putStrLn $ show flags
+>   cleanHook simpleUserHooks description wtf hooks flags
+
+> rustInstHook :: PD.PackageDescription -> LocalBuildInfo -> UserHooks -> InstallFlags -> IO ()
+> rustInstHook description localBuildInfo hooks flags = do
+>   dir <- getCurrentDirectory
+>   putStrLn "install"
+>   putStrLn dir
+>   exists <- doesFileExist $ dir ++ "/target/release/libplonk_verify.a"
+>   putStrLn $ if exists then "yes" else "no"
+>   putStrLn $ show flags
+>   instHook simpleUserHooks description localBuildInfo hooks flags
+
+> rustCopyHook :: PD.PackageDescription -> LocalBuildInfo -> UserHooks -> CopyFlags -> IO ()
+> rustCopyHook description localBuildInfo hooks flags = do
+>   dir <- getCurrentDirectory
+>   putStrLn "copy"
+>   putStrLn dir
+>   exists <- doesFileExist $ dir ++ "/target/release/libplonk_verify.a"
+>   putStrLn $ if exists then "yes" else "no"
+>   putStrLn $ show flags
+>   copyFiles verbose "./dist/build/" [("target/release/", "libplonk_verify.a")]
+>   copyHook simpleUserHooks description localBuildInfo hooks flags
 
 This handy automation (particularly useful when you want to quickly prototype
 without having to spawn manually `cargo` commands) is disabled by default.
+copyFile (dir ++ "/target/release/libplonk_verify.a") "
 Feel free to re-enable it while debugging your library, but I discourage you
 strongly to publish anything on Hackage that contains this hook!
