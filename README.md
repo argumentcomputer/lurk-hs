@@ -29,8 +29,14 @@ Ensure that you have Haskell and Cabal installed by following the instructions [
 ## Build steps
 - Build the Rust part of the project:
 ```bash
-cargo build
+cargo build --release
 ```
+
+- (For macOS only/cabal repl only) Build the dynamic library:
+```bash
+cargo rustc --release --crate-type cdylib
+```
+
 - Build the Haskell part of the project:
 ```bash
 cabal build
@@ -42,3 +48,17 @@ To run tests for the Rust components, execute:
 ```bash
 cargo test
 ```
+
+To run the example Haskell application, execute:
+```bash
+cabal run test
+```
+
+## Troubleshooting
+
+If you get "error while loading shared libraries", try:
+```bash
+cargo clean
+```
+
+This happens if the library is built against the `.so` file, and can happen if you ran `cargo rustc --crate-type cdylib` in the past.

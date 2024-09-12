@@ -1,7 +1,7 @@
+use hex;
 use hs_bindgen::*;
 use num_bigint::BigUint;
 use sha2::{Digest as _, Sha256};
-use hex;
 
 use sphinx_recursion_gnark_ffi::ffi;
 
@@ -23,7 +23,8 @@ pub fn verify_plonk_bn254(
     let committed_values_digest_str = strip_hex_prefix(committed_values_digest_str);
 
     // Decode the hex-encoded string for public values
-    let decoded_bytes = hex::decode(committed_values_digest_str).expect("Invalid committed values field");
+    let decoded_bytes =
+        hex::decode(committed_values_digest_str).expect("Invalid committed values field");
 
     // Check the bit length (bytes * 8 should be 256 bits), hash if necessary
     let bit_length = decoded_bytes.len() * 8;
@@ -33,7 +34,7 @@ pub fn verify_plonk_bn254(
         // Let's reproduce the digest using the committed values
         //
         // Hash the value using SHA-256
-        let mut hash: [u8;32]  = Sha256::digest(decoded_bytes).into();
+        let mut hash: [u8; 32] = Sha256::digest(decoded_bytes).into();
         // Truncate to 253 bits by clearing the top 3 bits of the first byte
         hash[0] &= 0x1F; // 0x1F is 00011111 in binary, which clears the top 3 bits
 
@@ -44,9 +45,11 @@ pub fn verify_plonk_bn254(
     };
 
     // Parse the BigNum arguments
-    let vkey_biguint = BigUint::parse_bytes(vkey_hash_str.as_bytes(), 16).expect("Failed to parse vkey");
-    let public_values_biguint = BigUint::parse_bytes(public_inputs.as_bytes(), 16).expect("Failed to parse public values");
-    
+    let vkey_biguint =
+        BigUint::parse_bytes(vkey_hash_str.as_bytes(), 16).expect("Failed to parse vkey");
+    let public_values_biguint =
+        BigUint::parse_bytes(public_inputs.as_bytes(), 16).expect("Failed to parse public values");
+
     let res = ffi::verify_plonk_bn254(
         build_dir_str,
         proof_str,
@@ -75,11 +78,8 @@ mod tests {
 
     // this assumes that the artifacts are installed in ~/.sp1/circuits/plonk_bn254/dev
     pub fn plonk_bn254_artifacts_dev_dir() -> PathBuf {
-        home::home_dir()
-            .unwrap()
-            .join(".sp1")
-            .join("circuits")
-            .join("plonk_bn254")
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("verifier-assets")
             .join("v1.0.8-testnet")
     }
 
@@ -91,7 +91,7 @@ mod tests {
         entry.extension().and_then(|ext| ext.to_str()) == Some("json")
     }
 
-    const MIN_PROOF_LENGTH: usize = 3*64 + 192 + 160 + 64 + 32 + 64 + 64; // 768
+    const MIN_PROOF_LENGTH: usize = 3 * 64 + 192 + 160 + 64 + 32 + 64 + 64; // 768
 
     #[test]
     fn test_plonk_bn254_prover() {
@@ -141,9 +141,7 @@ mod tests {
                 // Push the result of this verification to the results list
                 match result {
                     1 => results.push(Ok(())),
-                    _ => {
-                        results.push(Err(format!("Verification failed for {:?}", path)))
-                    }
+                    _ => results.push(Err(format!("Verification failed for {:?}", path))),
                 }
 
                 println!("Test completed for fixture: {:?}", path);

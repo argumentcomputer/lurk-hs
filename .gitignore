@@ -1,5 +1,6 @@
 # Cargo build
 **/target
+**/dist-newstyle
 
 # MacOS nuisances
 .DS_Store

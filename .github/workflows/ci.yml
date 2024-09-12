@@ -8,27 +8,44 @@ on:
     branches:
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   build-and-test:
-    runs-on: ubuntu-latest
-
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, warp-macos-latest-arm64-6x]
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Install go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: "**/go.sum"
 
       # Step 1: Set up Rust and build with Cargo
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
 
       - name: Build with Cargo
-        run: cargo build --release
+        run: |
+            if [[ "${{ matrix.runner }}" == "warp-macos-latest-arm64-6x" ]]; then
+              cargo rustc --release --crate-type cdylib
+            else
+              cargo build --release
+            fi
 
       # Step 2: Set up Haskell and build with Cabal
       - name: Set up Haskell
-        uses: haskell/actions/setup@v1
+        uses: haskell-actions/setup@v2
         with:
           ghc-version: '9.2.5'  
           cabal-version: '3.6.2.0'
@@ -36,17 +53,16 @@ jobs:
       - name: Build with Cabal
         run: cabal build
 
-      # Download and untar the required file
-      - name: Download and untar PLONK params
-        run: |
-          mkdir -p ~/.sp1/circuits/plonk_bn254/v1.0.8-testnet
-          wget https://sphinx-plonk-params.s3.amazonaws.com/v1.0.8-testnet.tar.gz -O plonk_params.tar.gz
-          tar -xzf plonk_params.tar.gz -C ~/.sp1/circuits/plonk_bn254/v1.0.8-testnet
-          rm plonk_params.tar.gz
-
       # Install and run nextest
       - name: Install nextest
         uses: taiki-e/install-action@nextest
 
       - name: Run tests with nextest
         run: cargo nextest run --release --no-fail-fast
+
+      # Run the Haskell test
+      - name: Run the cabal test program
+        run: cabal run test
+
+      - name: Run the Haskell test suite
+        run: cabal test
