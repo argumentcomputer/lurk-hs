@@ -37,6 +37,7 @@ import Distribution.System (buildPlatform)
 import Distribution.Simple.BuildPaths
   ( mkGenericSharedBundledLibName
   , mkGenericStaticLibName
+  , dllExtension
   )
 
 main :: IO ()
@@ -74,28 +75,22 @@ rustBuildHook description localBuildInfo hooks flags = do
 
   -- copy static lib
   putStrLn $ "Copy libplonk_verify.a to " <> staticTarget
-  rawSystemExit (fromFlag $ buildVerbosity flags) "cp"
-      [ "target/release/libplonk_verify.a"
-      , staticTarget
-      ]
+  rawSystemExit (fromFlag $ buildVerbosity flags) "cp" [staticSource, staticTarget]
 
   -- copy dyn lib
   putStrLn $ "Copy libplonk_verify.dylib to " <> dynTarget
-  rawSystemExit (fromFlag $ buildVerbosity flags) "cp"
-      [ "target/release/libplonk_verify.dylib"
-      , dynTarget
-      ]
+  rawSystemExit (fromFlag $ buildVerbosity flags) "cp" [dynSource, dynTarget]
 
   putStrLn "rustc compilation succeeded"
   buildHook simpleUserHooks description localBuildInfo hooks flags
  where
-  targetLibname = "Cplonk_verify"
   c = compiler localBuildInfo
-  ghcVersion = display (compilerFlavor c) <> display (compilerVersion c)
-  staticTarget = buildDir localBuildInfo
-    <> "/"
-    <> mkGenericStaticLibName targetLibname
-  dynTarget = buildDir localBuildInfo
-    <> "/"
-    <> mkGenericSharedBundledLibName buildPlatform (compilerId c) targetLibname
+  sourceLibname = "plonk_verify"
+  targetLibname = "Cplonk_verify"
+  sourceBuildDir = "target/release"
+  targetBuildDir = buildDir localBuildInfo
+  staticSource = sourceBuildDir <> "/" <> mkGenericStaticLibName sourceLibname
+  staticTarget = targetBuildDir <> "/" <> mkGenericStaticLibName targetLibname
+  dynSource = sourceBuildDir <> "/" <> "lib" <> sourceLibname <> "." <> dllExtension buildPlatform
+  dynTarget = targetBuildDir <> "/" <> mkGenericSharedBundledLibName buildPlatform (compilerId c) targetLibname
 
