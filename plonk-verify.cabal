@@ -26,7 +26,6 @@ extra-source-files:
     Cargo.toml
     Cargo.lock
     src/lib.rs
-    hsbindgen.toml
 
 data-files:
     verifier-assets/v1.0.8-testnet/vk.bin

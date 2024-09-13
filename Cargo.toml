@@ -6,7 +6,6 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/argumentcomputer/lurk-hs"
 
 [dependencies]
-hs-bindgen = { version = "0.9.0", features = ["full"] }
 # sphinx-recursion-gnark-ffi = { path = "../sphinx/recursion/gnark-ffi", features = ["native"]}
 sphinx-recursion-gnark-ffi = { git = "https://github.com/argumentcomputer/sphinx.git", branch = "dev", features = ["native"]}
 getrandom = "=0.2.14"
