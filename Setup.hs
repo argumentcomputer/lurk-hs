@@ -63,17 +63,6 @@ rustBuildHook description localBuildInfo hooks flags = do
     , "--target-dir"
     , rustTargetDir
     ]
-  -- rawSystemExit (fromFlag $ buildVerbosity flags) "cargo"
-  --   [ "+nightly"
-  --   , "build"
-  --   , "--release"
-  --   , "--target-dir"
-  --   , rustTargetDir
-  --   , "--out-dir"
-  --   , targetBuildDir
-  --   , "-Z"
-  --   , "unstable-options"
-  --   ]
 
   -- Install build results into cabal build directory
   createDirectoryIfMissingVerbose verbosity True targetBuildDir
