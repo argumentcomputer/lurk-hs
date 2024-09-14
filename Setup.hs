@@ -37,6 +37,7 @@ import Distribution.Simple.Compiler
 import Distribution.System (buildPlatform, buildOS, OS(..))
 import Distribution.Simple.BuildPaths
   ( mkGenericSharedBundledLibName
+  , mkGenericSharedLibName
   , mkGenericStaticLibName
   , dllExtension
   )
@@ -68,7 +69,10 @@ rustBuildHook description localBuildInfo hooks flags = do
   createDirectoryIfMissingVerbose verbosity True targetBuildDir
   copyFileVerbose verbosity staticSource staticTarget
   copyFileVerbose verbosity dynSource dynTarget
-  -- addLibraryPath buildPlatform
+
+  -- seems to be needed for local use of template haskell
+  copyFileVerbose verbosity dynSource dynTarget_
+
   when (buildOS == OSX) $
     rawSystemExit verbosity "install_name_tool"
         [ "-id"
@@ -91,4 +95,6 @@ rustBuildHook description localBuildInfo hooks flags = do
   staticTarget = targetBuildDir <> "/" <> mkGenericStaticLibName targetLibname
   dynSource = sourceBuildDir <> "/" <> "lib" <> sourceLibname <> "." <> dllExtension buildPlatform
   dynTarget = targetBuildDir <> "/" <> mkGenericSharedBundledLibName buildPlatform (compilerId c) targetLibname
+
+  dynTarget_ = targetBuildDir <> "/" <> mkGenericSharedLibName buildPlatform (compilerId c) targetLibname
 
