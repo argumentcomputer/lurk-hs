@@ -3,7 +3,6 @@ use num_bigint::BigUint;
 use sha2::{Digest as _, Sha256};
 
 use std::ffi::CStr;
-
 use sphinx_recursion_gnark_ffi::ffi;
 
 // Helper function to remove "0x" if present
@@ -16,23 +15,74 @@ pub extern "C" fn __c_verify_plonk_bn254(
     cvkeydir: *const core::ffi::c_char,
     cproof: *const core::ffi::c_char,
     cpkey: *const core::ffi::c_char,
-    cparams: *const core::ffi::c_char,
+    ccommitted_values_hash: *const core::ffi::c_char,
 ) -> core::ffi::c_uint
 {
     let vkeydir = unsafe { CStr::from_ptr(cvkeydir) };
     let proof = unsafe { CStr::from_ptr(cproof) };
     let pkey = unsafe { CStr::from_ptr(cpkey) };
-    let params = unsafe { CStr::from_ptr(cparams) };
+    let committed_values_hash = unsafe { CStr::from_ptr(ccommitted_values_hash) };
 
-    return verify_plonk_bn254(
+    return verify_plonk_bn254_hashed(
         vkeydir.to_str().expect("verifying key directory name is not a valid string"),
         proof.to_str().expect("proof is not a value string"),
         pkey.to_str().expect("program key is not a valid string"),
-        params.to_str().expect("public params is not a valid string"),
+        committed_values_hash.to_str().expect("committed values digest is not a valid string"),
     );
 }
 
-// Facade exposing a bindgen anchor
+pub fn verify_plonk_bn254_hashed(
+    build_dir_str: &str,
+    proof_str: &str,
+    vkey_hash_str: &str,
+    committed_values_digest_str: &str,
+) -> u32 {
+    let proof_str = strip_hex_prefix(proof_str);
+    let vkey_hash_str = strip_hex_prefix(vkey_hash_str);
+    let committed_values_digest_str = strip_hex_prefix(committed_values_digest_str);
+
+    // Decode the hex-encoded string for public values
+    let decoded_bytes =
+        hex::decode(committed_values_digest_str).expect("Invalid committed values field");
+
+    // Check the bit length (bytes * 8 should be 256 bits), hash if necessary
+    let bit_length = decoded_bytes.len() * 8;
+
+    let public_inputs: String = if bit_length != 256 {
+        eprintln!("Error in verify_plonk_bn254: wrong length of the committed values digest");
+        return 0u32; // Return 0 for failure
+    } else {
+        committed_values_digest_str.to_string()
+    };
+
+    // Parse the BigNum arguments
+    let vkey_biguint =
+        BigUint::parse_bytes(vkey_hash_str.as_bytes(), 16).expect("Failed to parse vkey");
+    let public_values_biguint =
+        BigUint::parse_bytes(public_inputs.as_bytes(), 16).expect("Failed to parse public values");
+
+    let res = ffi::verify_plonk_bn254(
+        build_dir_str,
+        proof_str,
+        &vkey_biguint.to_string(),
+        &public_values_biguint.to_string(),
+    );
+
+    // Call the actual function in sphinx_recursion_gnark_ffi
+    if let Err(e) = res {
+        eprintln!("Error in verify_plonk_bn254: {e}");
+        0u32 // Return 0 for failure
+    } else {
+        1u32 // Return 1 for success
+    }
+}
+
+// This version of the plonk verifier accepts commit values either plain or as
+// digest. Any value that is shorter than 32 bytes is considered a digest.
+// Values that are longer than 32 bytes are parsed as plain values.
+//
+// The function is provided mostly for testing of legacy test data.
+//
 pub fn verify_plonk_bn254(
     build_dir_str: &str,
     proof_str: &str,
