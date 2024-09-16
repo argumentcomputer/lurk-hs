@@ -25,7 +25,6 @@ import Crypto.Hash.SHA256 qualified as H
 import Data.ByteString qualified as B
 import Data.ByteString.Base16 qualified as B16
 import Data.ByteString.Short qualified as BS
-import Data.Foldable
 
 import Foreign.C.String
 import Foreign.C.Types
@@ -98,15 +97,13 @@ mkPublicParameterHash bytes
 --
 -- The digest is computed as SHA256 hash with the first three bits set to 0.
 --
-hashPublicParameters :: Foldable f => f PublicParameter -> PublicParameterHash
-hashPublicParameters l = PublicParameterHash
-    $ BS.toShort
-    $ clearBits
-    $ H.finalize
-    $ H.updates H.init
-    $ fmap (BS.fromShort . _publicParameter)
-    $ toList
-    $ l
+hashPublicParameters :: PublicParameter -> PublicParameterHash
+hashPublicParameters = PublicParameterHash
+    . BS.toShort
+    . clearBits
+    . H.hash
+    . BS.fromShort
+    .  _publicParameter
   where
     clearBits x = B.cons (0x1f .&. B.head x) (B.tail x)
 
@@ -129,12 +126,9 @@ verifyPlonkBn254
         -- ^ The program identifier. A program is valid only in the context of a
         -- particular verifying key. It also the number and types of public
         -- parameters are well defined.
-    -> [PublicParameter]
-        -- ^ The list of public parameters. Note, that the order of the
-        -- parameter matters. The number and types of parameters is determined
-        -- by the program id.
-        --
-        -- The actual encoding of the parameters depends on the program.
+    -> PublicParameter
+        -- ^ The public parameters of the program execution. The encoding of the
+        -- parameters depends on the program.
     -> IO Bool
 verifyPlonkBn254 vk proof pid params =
     verifyPlonkBn254' vk proof pid (hashPublicParameters params)

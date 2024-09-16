@@ -72,7 +72,7 @@ data ProofClaim = ProofClaim
         -- only in the context of a particular verifying key. Each program has a
         -- well defined set of public parameters.
 
-    , _claimPublicParameters :: !(Either PublicParameterHash [PublicParameter])
+    , _claimPublicParameters :: !(Either PublicParameterHash PublicParameter)
         -- ^ The public parameters of the respective program. For verification
         -- the parameters are encoded and hashes.
         --
@@ -91,7 +91,7 @@ instance FromJSON ProofClaim where
       where
         parseParameters o
             = (Left <$> o .: "publicValues")
-            <|> (Right . pure <$> o .: "publicValues")
+            <|> (Right <$> o .: "publicValues")
 
 readProof :: String -> IO ProofClaim
 readProof name = eitherDecodeFileStrict' ("./assets/" <> name <> ".json") >>= \case
