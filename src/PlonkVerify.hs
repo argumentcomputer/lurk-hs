@@ -15,12 +15,9 @@ module PlonkVerify
 , PublicParameter(..)
 , PublicParameterHash(..)
 , mkPublicParameterHash
-, hashPublicParameters
 , verifyPlonkBn254
 , verifyPlonkBn254'
 ) where
-
-import Crypto.Hash.SHA256 qualified as H
 
 import Data.ByteString qualified as B
 import Data.ByteString.Base16 qualified as B16
@@ -39,6 +36,9 @@ import Data.Bits
 
 foreign import ccall safe "__c_verify_plonk_bn254"
     verify_plonk_bn254 :: CString -> CString -> CString -> CString -> IO (CUInt)
+
+foreign import ccall safe "__c_verify_plonk_bn254_hashed"
+    verify_plonk_bn254_hashed :: CString -> CString -> CString -> CString -> IO (CUInt)
 
 -- -------------------------------------------------------------------------- --
 -- API Types
@@ -90,23 +90,6 @@ mkPublicParameterHash bytes
     | BS.head bytes .&. 0xe0 /= 0 = Left "first three bit are not set to 0"
     | otherwise = Right $ PublicParameterHash bytes
 
--- | Compute the 'PublicParameterHash' from a list of 'PublicParameter's.
---
--- In the context of verification the public parameters are just the
--- concatenation of the bytes that the program outputs.
---
--- The digest is computed as SHA256 hash with the first three bits set to 0.
---
-hashPublicParameters :: PublicParameter -> PublicParameterHash
-hashPublicParameters = PublicParameterHash
-    . BS.toShort
-    . clearBits
-    . H.hash
-    . BS.fromShort
-    .  _publicParameter
-  where
-    clearBits x = B.cons (0x1f .&. B.head x) (B.tail x)
-
 -- -------------------------------------------------------------------------- --
 -- Plonk Verifier API
 
@@ -130,8 +113,16 @@ verifyPlonkBn254
         -- ^ The public parameters of the program execution. The encoding of the
         -- parameters depends on the program.
     -> IO Bool
-verifyPlonkBn254 vk proof pid params =
-    verifyPlonkBn254' vk proof pid (hashPublicParameters params)
+verifyPlonkBn254 (VKey vk) (Proof proof) (ProgramId pid) (PublicParameter params) = do
+    withSystemTempDirectory "plonk-verifier" $ \path -> do
+        B.writeFile (path <> "/" <> "vk.bin") vk
+        withCString path $ \cpath ->
+            useAsHexCString (proof) $ \cproof ->
+                useAsHexCString pid $ \cpid ->
+                    useAsHexCString params $ \cparams ->
+                        (== 1) <$> verify_plonk_bn254 cpath cproof cpid cparams
+  where
+    useAsHexCString = B.useAsCString . B16.encode . BS.fromShort
 
 -- | Verify the claim that the program with the given id was invoked with the
 -- list of public parameters with the given digest.
@@ -160,7 +151,7 @@ verifyPlonkBn254' (VKey vk) (Proof proof) (ProgramId pid) (PublicParameterHash p
             useAsHexCString (proof) $ \cproof ->
                 useAsHexCString pid $ \cpid ->
                     useAsHexCString paramHash $ \cparamHash ->
-                        (== 1) <$> verify_plonk_bn254 cpath cproof cpid cparamHash
+                        (== 1) <$> verify_plonk_bn254_hashed cpath cproof cpid cparamHash
   where
     useAsHexCString = B.useAsCString . B16.encode . BS.fromShort
 
