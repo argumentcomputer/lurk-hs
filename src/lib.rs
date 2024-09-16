@@ -1,7 +1,8 @@
 use hex;
-use hs_bindgen::*;
 use num_bigint::BigUint;
 use sha2::{Digest as _, Sha256};
+
+use std::ffi::CStr;
 
 use sphinx_recursion_gnark_ffi::ffi;
 
@@ -10,8 +11,28 @@ fn strip_hex_prefix(hex: &str) -> &str {
     hex.strip_prefix("0x").unwrap_or(hex)
 }
 
+#[no_mangle]
+pub extern "C" fn __c_verify_plonk_bn254(
+    cvkeydir: *const core::ffi::c_char,
+    cproof: *const core::ffi::c_char,
+    cpkey: *const core::ffi::c_char,
+    cparams: *const core::ffi::c_char,
+) -> core::ffi::c_uint
+{
+    let vkeydir = unsafe { CStr::from_ptr(cvkeydir) };
+    let proof = unsafe { CStr::from_ptr(cproof) };
+    let pkey = unsafe { CStr::from_ptr(cpkey) };
+    let params = unsafe { CStr::from_ptr(cparams) };
+
+    return verify_plonk_bn254(
+        vkeydir.to_str().expect("verifying key directory name is not a valid string"),
+        proof.to_str().expect("proof is not a value string"),
+        pkey.to_str().expect("program key is not a valid string"),
+        params.to_str().expect("public params is not a valid string"),
+    );
+}
+
 // Facade exposing a bindgen anchor
-#[hs_bindgen]
 pub fn verify_plonk_bn254(
     build_dir_str: &str,
     proof_str: &str,
