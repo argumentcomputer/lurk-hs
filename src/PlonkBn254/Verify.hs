@@ -4,7 +4,7 @@
 {-# LANGUAGE ImportQualifiedPost #-}
 {-# LANGUAGE TemplateHaskell #-}
 
--- | This library is not tight to a particular VM key. But it provides tools that
+-- | This library is not tied to a particular VM key. But it provides tools that
 -- help users to manage VM keys in their applications.
 
 module PlonkBn254.Verify
