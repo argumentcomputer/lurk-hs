@@ -33,17 +33,17 @@ import Test.Hspec
 
 -- internal modules
 
-import EmbedVKeys
-import PlonkVerify
+import PlonkBn254.Verify
+import PlonkBn254.Utils.EmbedVMKeys
 
 -- -------------------------------------------------------------------------- --
 -- main
 
-verifyingKeyName :: String
-verifyingKeyName = "vk"
+vmKeyName :: String
+vmKeyName = "vk"
 
-verifyingKeys :: [(FilePath, VKey)]
-verifyingKeys = $$(embedVKeys "bin" "verifier-assets/v1.0.8-testnet")
+vmKeys :: [(FilePath, VMKey)]
+vmKeys = $$(embedVMKeys "bin" "verifier-assets/v1.0.8-testnet")
 
 main :: IO ()
 main = hspec $ describe "examples" $ do
@@ -69,8 +69,8 @@ instance FromJSON PublicParameterHash where
 data ProofClaim = ProofClaim
     { _claimProgramId :: !ProgramId
         -- ^ Identifies the RISC-V program that is proven. A program is valid
-        -- only in the context of a particular verifying key. Each program has a
-        -- well defined set of public parameters.
+        -- only in the context of a particular vm key. Each program has a well
+        -- defined set of public parameters.
 
     , _claimPublicParameters :: !(Either PublicParameterHash PublicParameter)
         -- ^ The public parameters of the respective program. For verification
@@ -107,19 +107,19 @@ testExample name = it name $ do
     shouldBe r True
 
 runExample :: String -> IO Bool
-runExample name = case lookup verifyingKeyName verifyingKeys of
+runExample name = case lookup vmKeyName vmKeys of
     Just vk -> do
         p <- readProof name
         case _claimPublicParameters p of
-            Left pp -> verifyPlonkBn254' vk
+            Left pp -> verifyPrehashed vk
                 (_claimProof p)
                 (_claimProgramId p)
                 pp
-            Right pp -> verifyPlonkBn254 vk
+            Right pp -> verify vk
                 (_claimProof p)
                 (_claimProgramId p)
                 pp
-    Nothing -> error $ "missing verifying key: " <> verifyingKeyName
+    Nothing -> error $ "missing VM key: " <> vmKeyName
 
 -- -------------------------------------------------------------------------- --
 -- Utils

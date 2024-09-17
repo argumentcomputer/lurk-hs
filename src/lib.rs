@@ -32,7 +32,7 @@ pub extern "C" fn __c_verify_plonk_bn254(
 }
 
 #[no_mangle]
-pub extern "C" fn __c_verify_plonk_bn254_hashed(
+pub extern "C" fn __c_verify_plonk_bn254_prehashed(
     cvkeydir: *const core::ffi::c_char,
     cproof: *const core::ffi::c_char,
     cpkey: *const core::ffi::c_char,
@@ -44,7 +44,7 @@ pub extern "C" fn __c_verify_plonk_bn254_hashed(
     let pkey = unsafe { CStr::from_ptr(cpkey) };
     let committed_values_hash = unsafe { CStr::from_ptr(ccommitted_values_hash) };
 
-    return verify_plonk_bn254_hashed(
+    return verify_plonk_bn254_prehashed(
         vkeydir.to_str().expect("verifying key directory name is not a valid string"),
         proof.to_str().expect("proof is not a value string"),
         pkey.to_str().expect("program key is not a valid string"),
@@ -67,10 +67,10 @@ pub fn verify_plonk_bn254(
     hash[0] &= 0x1F; // 0x1F is 00011111 in binary, which clears the top 3 bits
     // Re-encode the truncated hash in hex
     let committed_values_digest_str: String = hex::encode(hash);
-    verify_plonk_bn254_hashed(build_dir_str, proof_str, vkey_hash_str, &committed_values_digest_str)
+    verify_plonk_bn254_prehashed(build_dir_str, proof_str, vkey_hash_str, &committed_values_digest_str)
 }
 
-pub fn verify_plonk_bn254_hashed(
+pub fn verify_plonk_bn254_prehashed(
     build_dir_str: &str,
     proof_str: &str,
     vkey_hash_str: &str,
@@ -190,7 +190,7 @@ mod tests {
                         &fixture.public_values,
                     )
                 } else {
-                    super::verify_plonk_bn254_hashed(
+                    super::verify_plonk_bn254_prehashed(
                         build_dir.to_str().unwrap(),
                         &fixture.proof,
                         &fixture.vkey,
