@@ -3,7 +3,6 @@ use num_bigint::BigUint;
 use sha2::{Digest as _, Sha256};
 
 use std::ffi::CStr;
-
 use sphinx_recursion_gnark_ffi::ffi;
 
 // Helper function to remove "0x" if present
@@ -16,24 +15,62 @@ pub extern "C" fn __c_verify_plonk_bn254(
     cvkeydir: *const core::ffi::c_char,
     cproof: *const core::ffi::c_char,
     cpkey: *const core::ffi::c_char,
-    cparams: *const core::ffi::c_char,
+    ccommitted_values: *const core::ffi::c_char,
 ) -> core::ffi::c_uint
 {
     let vkeydir = unsafe { CStr::from_ptr(cvkeydir) };
     let proof = unsafe { CStr::from_ptr(cproof) };
     let pkey = unsafe { CStr::from_ptr(cpkey) };
-    let params = unsafe { CStr::from_ptr(cparams) };
+    let committed_values = unsafe { CStr::from_ptr(ccommitted_values) };
 
     return verify_plonk_bn254(
         vkeydir.to_str().expect("verifying key directory name is not a valid string"),
         proof.to_str().expect("proof is not a value string"),
         pkey.to_str().expect("program key is not a valid string"),
-        params.to_str().expect("public params is not a valid string"),
+        committed_values.to_str().expect("committed values are not a valid string"),
     );
 }
 
-// Facade exposing a bindgen anchor
+#[no_mangle]
+pub extern "C" fn __c_verify_plonk_bn254_prehashed(
+    cvkeydir: *const core::ffi::c_char,
+    cproof: *const core::ffi::c_char,
+    cpkey: *const core::ffi::c_char,
+    ccommitted_values_hash: *const core::ffi::c_char,
+) -> core::ffi::c_uint
+{
+    let vkeydir = unsafe { CStr::from_ptr(cvkeydir) };
+    let proof = unsafe { CStr::from_ptr(cproof) };
+    let pkey = unsafe { CStr::from_ptr(cpkey) };
+    let committed_values_hash = unsafe { CStr::from_ptr(ccommitted_values_hash) };
+
+    return verify_plonk_bn254_prehashed(
+        vkeydir.to_str().expect("verifying key directory name is not a valid string"),
+        proof.to_str().expect("proof is not a value string"),
+        pkey.to_str().expect("program key is not a valid string"),
+        committed_values_hash.to_str().expect("committed values digest is not a valid string"),
+    );
+}
+
 pub fn verify_plonk_bn254(
+    build_dir_str: &str,
+    proof_str: &str,
+    vkey_hash_str: &str,
+    committed_values_str: &str,
+) -> u32 {
+    let committed_values_str = strip_hex_prefix(committed_values_str);
+    // Decode the hex-encoded string for public values
+    let decoded_bytes = hex::decode(committed_values_str).expect("Invalid committed values field");
+    // Hash the value using SHA-256
+    let mut hash: [u8; 32] = Sha256::digest(decoded_bytes).into();
+    // Truncate to 253 bits by clearing the top 3 bits of the first byte
+    hash[0] &= 0x1F; // 0x1F is 00011111 in binary, which clears the top 3 bits
+    // Re-encode the truncated hash in hex
+    let committed_values_digest_str: String = hex::encode(hash);
+    verify_plonk_bn254_prehashed(build_dir_str, proof_str, vkey_hash_str, &committed_values_digest_str)
+}
+
+pub fn verify_plonk_bn254_prehashed(
     build_dir_str: &str,
     proof_str: &str,
     vkey_hash_str: &str,
@@ -50,17 +87,9 @@ pub fn verify_plonk_bn254(
     // Check the bit length (bytes * 8 should be 256 bits), hash if necessary
     let bit_length = decoded_bytes.len() * 8;
 
-    let public_inputs: String = if bit_length > 256 {
-        // The user has provided the committed values rather than the digest!
-        // Let's reproduce the digest using the committed values
-        //
-        // Hash the value using SHA-256
-        let mut hash: [u8; 32] = Sha256::digest(decoded_bytes).into();
-        // Truncate to 253 bits by clearing the top 3 bits of the first byte
-        hash[0] &= 0x1F; // 0x1F is 00011111 in binary, which clears the top 3 bits
-
-        // Re-encode the truncated hash in hex
-        hex::encode(hash)
+    let public_inputs: String = if bit_length != 256 {
+        eprintln!("Error in verify_plonk_bn254: wrong length of the committed values digest");
+        return 0u32; // Return 0 for failure
     } else {
         committed_values_digest_str.to_string()
     };
@@ -152,12 +181,22 @@ mod tests {
 
                 // Fetch the prover's asset directory
                 let build_dir = plonk_bn254_artifacts_dev_dir();
-                let result = super::verify_plonk_bn254(
-                    build_dir.to_str().unwrap(),
-                    &fixture.proof,
-                    &fixture.vkey,
-                    &fixture.public_values,
-                );
+
+                let result = if strip_hex_prefix(&fixture.public_values).len() > 64 {
+                    super::verify_plonk_bn254(
+                        build_dir.to_str().unwrap(),
+                        &fixture.proof,
+                        &fixture.vkey,
+                        &fixture.public_values,
+                    )
+                } else {
+                    super::verify_plonk_bn254_prehashed(
+                        build_dir.to_str().unwrap(),
+                        &fixture.proof,
+                        &fixture.vkey,
+                        &fixture.public_values,
+                    )
+                };
 
                 // Push the result of this verification to the results list
                 match result {

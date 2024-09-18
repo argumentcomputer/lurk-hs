@@ -47,8 +47,8 @@ jobs:
       - name: Set up Haskell
         uses: haskell-actions/setup@v2
         with:
-          ghc-version: '9.2.5'  
-          cabal-version: '3.6.2.0'
+          ghc-version: '9.10.1'  
+          cabal-version: 'latest'
 
       - name: Build with Cabal
         run: cabal build
