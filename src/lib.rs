@@ -10,6 +10,9 @@ fn strip_hex_prefix(hex: &str) -> &str {
     hex.strip_prefix("0x").unwrap_or(hex)
 }
 
+/// It is the obligation of the caller to guarantee that the arguments
+/// are non-null null-terminated c-strings.
+///
 #[no_mangle]
 pub extern "C" fn __c_verify_plonk_bn254(
     cvkeydir: *const core::ffi::c_char,
@@ -23,14 +26,26 @@ pub extern "C" fn __c_verify_plonk_bn254(
     let pkey = unsafe { CStr::from_ptr(cpkey) };
     let committed_values = unsafe { CStr::from_ptr(ccommitted_values) };
 
-    return verify_plonk_bn254(
-        vkeydir.to_str().expect("verifying key directory name is not a valid string"),
-        proof.to_str().expect("proof is not a value string"),
-        pkey.to_str().expect("program key is not a valid string"),
-        committed_values.to_str().expect("committed values are not a valid string"),
+    let r = std::panic::catch_unwind(|| {
+        verify_plonk_bn254(
+            vkeydir.to_str().expect("verifying key directory name is not a valid string"),
+            proof.to_str().expect("proof is not a value string"),
+            pkey.to_str().expect("program key is not a valid string"),
+            committed_values.to_str().expect("committed values are not a valid string"),
+        )}
     );
+
+    // Ideally we would return an err code and/or message on failure
+    if r.is_ok() {
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
+/// It is the obligation of the caller to guarantee that the arguments
+/// are non-null null-terminated c-strings.
+///
 #[no_mangle]
 pub extern "C" fn __c_verify_plonk_bn254_prehashed(
     cvkeydir: *const core::ffi::c_char,
@@ -44,14 +59,25 @@ pub extern "C" fn __c_verify_plonk_bn254_prehashed(
     let pkey = unsafe { CStr::from_ptr(cpkey) };
     let committed_values_hash = unsafe { CStr::from_ptr(ccommitted_values_hash) };
 
-    return verify_plonk_bn254_prehashed(
-        vkeydir.to_str().expect("verifying key directory name is not a valid string"),
-        proof.to_str().expect("proof is not a value string"),
-        pkey.to_str().expect("program key is not a valid string"),
-        committed_values_hash.to_str().expect("committed values digest is not a valid string"),
+    let r = std::panic::catch_unwind(|| {
+        verify_plonk_bn254_prehashed(
+            vkeydir.to_str().expect("verifying key directory name is not a valid string"),
+            proof.to_str().expect("proof is not a value string"),
+            pkey.to_str().expect("program key is not a valid string"),
+            committed_values_hash.to_str().expect("committed values digest is not a valid string"),
+        )}
     );
+
+    // Ideally we would return an err code and/or message on failure
+    if r.is_ok() {
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
+/// This function panics on invalid inputs.
+///
 pub fn verify_plonk_bn254(
     build_dir_str: &str,
     proof_str: &str,
@@ -70,6 +96,8 @@ pub fn verify_plonk_bn254(
     verify_plonk_bn254_prehashed(build_dir_str, proof_str, vkey_hash_str, &committed_values_digest_str)
 }
 
+/// This function panics on invalid inputs.
+///
 pub fn verify_plonk_bn254_prehashed(
     build_dir_str: &str,
     proof_str: &str,
