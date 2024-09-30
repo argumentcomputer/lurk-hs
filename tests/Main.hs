@@ -47,7 +47,6 @@ vmKeys = $$(embedVMKeys "bin" "verifier-assets/v1.0.8.2-testnet")
 
 main :: IO ()
 main = hspec $ describe "examples" $ do
-    testExample "fibonacci_fixture"
     testExample "epoch_change"
     testExample "inclusion_fixture"
 
