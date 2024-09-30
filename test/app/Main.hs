@@ -15,8 +15,8 @@ import PlonkBn254.Verify
 main :: IO ()
 main = do
     -- This directory contains only the necessary artifacts for verification
-    -- Alternatively, the parameters might also be present at `~/.sp1/circuits/plonk_bn254/v1.0.8-testnet`
-    let circuitPathStr = "./verifier-assets/v1.0.8-testnet"
+    -- Alternatively, the parameters might also be present at `~/.sp1/circuits/plonk_bn254/<VERSION>`
+    let circuitPathStr = "./verifier-assets/v1.0.8.2-testnet"
     vk <- VMKey <$> B.readFile (circuitPathStr <> "/vk.bin")
 
     -- Convert Haskell strings to CStrings
