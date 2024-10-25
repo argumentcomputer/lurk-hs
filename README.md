@@ -21,7 +21,22 @@ Download the installer from https://go.dev/dl/ and follow the installation instr
 ```
 
 ### 2. Install Rust
-Make sure you have Rust installed by following the instructions [here](https://rustup.rs/)..
+Make sure you have Rust installed by following the instructions [here](https://rustup.rs/).
+
+## Logging Configuration
+
+The verifier uses two logging systems:
+
+- Rust logging via `tokio-tracing`, configured through the `RUST_LOG` environment variable. See the [tracing documentation](https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html) for detailed configuration options.
+- Go logging for FFI calls, configured through the `SP1_GO_LOG` environment variable.
+
+To set a global log level (e.g. warn), configure both variables:
+
+```bash
+RUST_LOG=warn SP1_GO_LOG=warn ./plonk-verify ...
+```
+
+Valid log levels are: error, warn, info, debug, trace
 
 ### 3. Install Haskell (Cabal)
 Ensure that you have Haskell and Cabal installed by following the instructions [here](https://www.haskell.org/cabal/).
