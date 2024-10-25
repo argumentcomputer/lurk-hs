@@ -36,7 +36,7 @@ To set a global log level (e.g. warn), configure both variables:
 RUST_LOG=warn SP1_GO_LOG=warn ./plonk-verify ...
 ```
 
-Valid log levels are: error, warn, info, debug, trace
+Valid log levels are: error, warn, info, debug, trace, off
 
 ### 3. Install Haskell (Cabal)
 Ensure that you have Haskell and Cabal installed by following the instructions [here](https://www.haskell.org/cabal/).
