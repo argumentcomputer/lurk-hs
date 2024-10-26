@@ -158,7 +158,7 @@ mod tests {
     pub fn plonk_bn254_artifacts_dev_dir() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("verifier-assets")
-            .join("v1.0.8.2-testnet")
+            .join("v1.0.8.3-testnet")
     }
 
     pub fn asset_directory() -> PathBuf {

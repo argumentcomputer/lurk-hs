@@ -16,7 +16,7 @@ main :: IO ()
 main = do
     -- This directory contains only the necessary artifacts for verification
     -- Alternatively, the parameters might also be present at `~/.sp1/circuits/plonk_bn254/<VERSION>`
-    let circuitPathStr = "./verifier-assets/v1.0.8.2-testnet"
+    let circuitPathStr = "./verifier-assets/v1.0.8.3-testnet"
     vk <- VMKey <$> B.readFile (circuitPathStr <> "/vk.bin")
 
     -- Convert Haskell strings to CStrings
