@@ -13,7 +13,7 @@ extra-source-files:
     src/lib.rs
 
 data-files:
-    verifier-assets/v1.0.8.2-testnet/vk.bin
+    verifier-assets/v1.0.8.3-testnet/vk.bin
 
 build-type: Custom
 custom-setup
